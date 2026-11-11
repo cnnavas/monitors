@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monitors CNN</title>
+<meta name="description" content="App de monitors del Club Natació Navàs: sesiones, lista, horas y gastos.">
+<meta name="theme-color" content="#111111">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Monitors CNN">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<style>
+  :root{--ink:#111111;--sun:#FFCC00;--paper:#ffffff}
+  html,body{margin:0;height:100%;background:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  #app{position:fixed;inset:0;width:100%;height:100%;border:0;background:#F4F4F1;padding-top:env(safe-area-inset-top)}
+  #splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:var(--ink);color:#fff;transition:opacity .4s;z-index:2}
+  #splash img{width:140px;height:140px;border-radius:24px;background:#fff}
+  #splash b{font-size:22px;letter-spacing:.04em}
+  #splash small{color:#bbb}
+  .dots{display:flex;gap:6px}.dots i{width:8px;height:8px;border-radius:50%;background:var(--sun);animation:b 1s infinite alternate}.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
+  @keyframes b{to{opacity:.2;transform:translateY(-4px)}}
+  #inst{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:3;background:#fff;color:var(--ink);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:14px 16px;display:none;gap:10px;align-items:flex-start;font-size:15px;line-height:1.35}
+  #inst.on{display:flex}
+  #inst img{width:44px;height:44px;border-radius:10px;flex:none}
+  #inst p{margin:2px 0 8px}
+  #inst .row{display:flex;gap:8px;flex-wrap:wrap}
+  #inst button{font:inherit;font-weight:700;border-radius:10px;padding:9px 14px;border:0;cursor:pointer}
+  #bInst{background:var(--sun);color:var(--ink)}
+  #inst{border-top:5px solid var(--sun)}
+  #bTanca{background:#eee;color:var(--ink)}
+  .ios-ic{display:inline-block;border:1.5px solid currentColor;border-radius:4px;width:14px;height:14px;position:relative;vertical-align:-2px}
+  .ios-ic:after{content:"↑";position:absolute;left:2px;top:-6px;font-size:12px;font-weight:700}
+</style>
+</head>
+<body>
+<div id="splash" role="status" aria-live="polite"><img src="icon-192.png" alt="Escudo del Club Natació Navàs"><b style="color:#FFCC00">MONITORS · CN NAVÀS</b><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><small>Cargando…</small></div>
+<iframe id="app" title="Monitors CN Navàs" allow="clipboard-write"></iframe>
+<div id="inst" role="dialog" aria-label="Instalar la app de monitors">
+  <img src="icon-192.png" alt="">
+  <div><b>Instala la app de monitors en el móvil</b><p id="instTxt"></p><div class="row"><button id="bInst" hidden>Instalar</button><button id="bTanca">Ahora no</button></div></div>
+</div>
+<script>
+// Enllaç de l'app de monitors (Apps Script). Si mai canvia, només cal canviar aquesta línia.
+var BOTIGA = 'https://script.google.com/macros/s/AKfycbx3T4EjxOpf9WpPBaYu_PMOA2WC-3vECeqCW2AYCXelR_BszxR_3ZI2xsGdTVxCAa6r/exec';
+
+var q = new URLSearchParams(location.search), src = new URL(BOTIGA);
+['_x'].forEach(function (k) { if (q.get(k)) src.searchParams.set(k, q.get(k)); });
+var app = document.getElementById('app'), splash = document.getElementById('splash');
+app.src = src.toString();
+app.onload = function () { splash.style.opacity = 0; setTimeout(function () { splash.remove(); }, 450); };
+setTimeout(function () { if (splash.isConnected) app.onload(); }, 12000);
+
+// Ajuda per instal·lar (només si no està instal·lada i no s'ha tancat abans)
+function llegeix(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function desa(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
+var instal = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+var ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+var mobil = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent) || ios;
+var box = document.getElementById('inst'), txt = document.getElementById('instTxt'), bInst = document.getElementById('bInst'), prompt = null;
+function mostra() { if (!instal && mobil && !llegeix('cnn_mon_no')) setTimeout(function () { box.classList.add('on'); }, 2500); }
+document.getElementById('bTanca').onclick = function () { box.classList.remove('on'); desa('cnn_mon_no', '1'); };
+if (ios) { txt.innerHTML = 'Toca <span class="ios-ic" aria-label="Compartir"></span> <b>Compartir</b> (abajo) y después <b>«Añadir a pantalla de inicio»</b>.'; mostra(); }
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault(); prompt = e; txt.textContent = 'Añádela a la pantalla de inicio con el escudo y ábrela como una app.'; bInst.hidden = false; mostra();
+});
+bInst.onclick = function () { if (!prompt) return; prompt.prompt(); prompt.userChoice.finally(function () { box.classList.remove('on'); prompt = null; }); };
+window.addEventListener('appinstalled', function () { box.classList.remove('on'); desa('cnn_mon_no', '1'); });
+if (!ios && mobil) { txt.textContent = 'En el menú del navegador (⋮) elige «Instalar aplicación» o «Añadir a pantalla de inicio».'; setTimeout(function () { if (!prompt) mostra(); }, 4000); }
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () { });
+</script>
+</body>
+</html>
